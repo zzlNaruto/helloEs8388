@@ -39,14 +39,14 @@ uint8_t *wav_buffer;
 size_t wav_size;
 File myWavFile;
 
-uint16_t constantsVolume = 40;
+uint16_t constantsVolume = 20;
 uint16_t constantsBalance = 500;
 
 /*测试音频*/
 extern const unsigned char _ac2591[180044UL + 1];
 
 File myWavFileTemp;
-const int myWavFileBufferSize = 512;  // 每次从SD卡读取的字节数（可以调整）
+const int myWavFileBufferSize = 512*1024;  // 每次从SD卡读取的字节数（可以调整）
 byte myWavFileAudioBuffer[myWavFileBufferSize];
 
 void setup() {
@@ -163,11 +163,15 @@ void palyWavDemo(void)
   Serial.print(wavSizeTemp/1024);
   Serial.println(" KB");
 
+  myWavFileTemp.seek(44);
+
   while (myWavFileTemp.available()) {
       // 每次读取一块数据到缓冲区
       int bytesRealSize = myWavFileTemp.read(myWavFileAudioBuffer, myWavFileBufferSize);
-      Serial.print("bytesRealSize: ");
+      // 打印文件大小
+      Serial.print("文件 bytesRealSize 大小为: ");
       Serial.print(bytesRealSize);
+      Serial.println(" KB");
       // 调用你现有的播放方法来播放缓冲区的数据
       // 示例：playAudioBuffer(audioBuffer, bytesRead);
       // 你需要将这部分替换为实际的播放代码
