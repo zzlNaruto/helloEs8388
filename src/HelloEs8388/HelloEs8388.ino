@@ -16,7 +16,7 @@
 #include "ES8388.h"
 #include "xl9555.h"
 #include "spi_sdcard.h"
-// #include "FS.h"
+#include <FS.h>
 #include <SD.h>
 #include "myfs.h"
 
@@ -46,8 +46,8 @@ uint16_t constantsBalance = 500;
 extern const unsigned char _ac2591[180044UL + 1];
 
 File myWavFileTemp;
-const int myWavFileBufferSize = 512*1024;  // 每次从SD卡读取的字节数（可以调整）
-byte myWavFileAudioBuffer[myWavFileBufferSize];
+const size_t myWavFileBufferSize = 128*1024;  // 每次从SD卡读取的字节数（可以调整）
+uint8_t myWavFileAudioBuffer[myWavFileBufferSize];
 
 void setup() {
   // Initialize the serial port
@@ -140,22 +140,12 @@ void loop() {
 void palyWavDemo(void)
 {
   // Create a file on the SD card
-  myWavFileTemp = SD.open("/MUSIC/temp.WAV",FILE_READ);
+  myWavFileTemp = SD.open("/MUSIC/temp.WAV");
   // myWavFileTemp = SD.open("/MUSIC/风起天阑.WAV",FILE_READ);
   if (!myWavFileTemp) {
     Serial.println("Failed to open file!");
     return;
   }
-
-  unsigned long fileSize = myWavFileTemp.size();
-  
-  // 将字节转换为KB
-  float fileSizeKB = fileSize / 1024.0;
-  
-  // 打印文件大小
-  Serial.print("文件 myWavFileTemp.txt 大小为: ");
-  Serial.print(fileSizeKB);
-  Serial.println(" KB");
   // Write the audio data to the file
   size_t wavSizeTemp = myWavFileTemp.size();
   // 打印文件大小
@@ -167,15 +157,15 @@ void palyWavDemo(void)
 
   while (myWavFileTemp.available()) {
       // 每次读取一块数据到缓冲区
-      int bytesRealSize = myWavFileTemp.read(myWavFileAudioBuffer, myWavFileBufferSize);
+      size_t bytesRealSize = myWavFileTemp.read(myWavFileAudioBuffer, myWavFileBufferSize);
       // 打印文件大小
       Serial.print("文件 bytesRealSize 大小为: ");
-      Serial.print(bytesRealSize);
+      Serial.print(bytesRealSize/1024);
       Serial.println(" KB");
       // 调用你现有的播放方法来播放缓冲区的数据
       // 示例：playAudioBuffer(audioBuffer, bytesRead);
       // 你需要将这部分替换为实际的播放代码
-      playAudioBuffer(myWavFileAudioBuffer, bytesRealSize);
+      es8388.playWAV(myWavFileAudioBuffer, bytesRealSize,constantsVolume,constantsBalance);
 
       // 可以根据播放设备的要求加上延时或者检查播放是否完成
   }
@@ -186,9 +176,31 @@ void palyWavDemo(void)
   // xl9555_pin_set(BEEP,IO_SET_LOW);
   // xl9555_pin_set(BEEP,IO_SET_HIGH);
 }
-void playAudioBuffer(byte *buffer, int bytesRealSize) {
+void playAudioBuffer(uint8_t *buffer, size_t bytesRealSize) {
   // 这里替换为你实际的音频播放代码
   // 比如将数据写入DAC，或者通过PWM输出播放音频
     // 示例：假设音频数据可以直接通过PWM或DAC输出
-  es8388.playWAV((uint8_t *)buffer, sizeof(bytesRealSize),constantsVolume,constantsBalance);
+
+}
+void playWavFile(const char* filename) {
+    myWavFileTemp = SD.open(filename);
+    if (!myWavFileTemp) {
+        Serial.println("文件打开失败");
+        return;
+    }
+
+    uint8_t buffer[1024];
+    while (myWavFileTemp.available()) {
+        int bytesRead = myWavFileTemp.read(buffer, sizeof(buffer));
+        size_t bytes_written = 0;
+        i2s_write(I2S_NUM_0, buffer, bytesRead, &bytes_written, portMAX_DELAY);
+    }
+    file.close();
+}
+void testTempWav()
+{
+  for (int i = 0; i < 1000; i++) {
+    int16_t sample = (int16_t)(sin(i * 2 * 3.14159 / 100) * 32767);
+    i2s_write(I2S_NUM_0, &sample, sizeof(sample), &bytes_written, portMAX_DELAY);
+  }
 }
