@@ -41,6 +41,7 @@ File myWavFile;
 
 uint16_t constantsVolume = 20;
 uint16_t constantsBalance = 500;
+uint8_t constantsMicGain = 120;
 
 /*测试音频*/
 extern const unsigned char _ac2591[180044UL + 1];
@@ -48,6 +49,8 @@ extern const unsigned char _ac2591[180044UL + 1];
 File myWavFileTemp;
 const size_t myWavFileBufferSize = 128*1024;  // 每次从SD卡读取的字节数（可以调整）
 uint8_t myWavFileAudioBuffer[myWavFileBufferSize];
+
+uint8_t gptBuffer[1024];
 
 void setup() {
   // Initialize the serial port
@@ -93,7 +96,7 @@ void loop() {
     {
       Serial.println("按下boot按键");
       // Record 5 seconds of audio data
-      wav_buffer = es8388.recordWAV(5, &wav_size);
+      wav_buffer = es8388.recordWAV(5, &wav_size, constantsMicGain);
 
       Serial.println("Recording complete. Playing audio data in 2 seconds.");
       delay(2000);
@@ -134,6 +137,16 @@ void loop() {
     {
       Serial.println("按下KEY1按键");
       es8388.playWAV((uint8_t *)_ac2591, sizeof(_ac2591),constantsVolume,constantsBalance);
+    }
+    if (KEY2_Press == 0)
+    {
+      Serial.println("按下KEY2按键");
+      es8388.playWAV(wav_buffer, wav_size,constantsVolume,constantsBalance);
+    }
+    if (KEY3_Press == 0)
+    {
+      Serial.println("按下KEY3按键");
+
     }
     delay(1000);
 }
@@ -182,25 +195,29 @@ void playAudioBuffer(uint8_t *buffer, size_t bytesRealSize) {
     // 示例：假设音频数据可以直接通过PWM或DAC输出
 
 }
-void playWavFile(const char* filename) {
+void chatGptTestPlayWavFile(const char* filename) {
     myWavFileTemp = SD.open(filename);
     if (!myWavFileTemp) {
         Serial.println("文件打开失败");
         return;
     }
 
-    uint8_t buffer[1024];
     while (myWavFileTemp.available()) {
-        int bytesRead = myWavFileTemp.read(buffer, sizeof(buffer));
+        size_t bytesRead = myWavFileTemp.read(gptBuffer, sizeof(gptBuffer));
         size_t bytes_written = 0;
-        i2s_write(I2S_NUM_0, buffer, bytesRead, &bytes_written, portMAX_DELAY);
+        es8388.playWAV(gptBuffer, bytesRead,constantsVolume,constantsBalance);
     }
-    file.close();
+    myWavFileTemp.close();
 }
 void testTempWav()
 {
   for (int i = 0; i < 1000; i++) {
-    int16_t sample = (int16_t)(sin(i * 2 * 3.14159 / 100) * 32767);
-    i2s_write(I2S_NUM_0, &sample, sizeof(sample), &bytes_written, portMAX_DELAY);
+    uint8_t sample = (uint8_t)(sin(i * 2 * 3.14159 / 100) * 32767);
+    if(i == 999)
+    {
+       Serial.println("999");
+    }
+    es8388.playWAV(&sample, sizeof(sample),constantsVolume,constantsBalance);
+    // i2s_write(I2S_NUM_0, &sample, sizeof(sample), &bytes_written, portMAX_DELAY);
   }
 }

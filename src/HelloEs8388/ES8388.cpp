@@ -672,13 +672,15 @@ void ES8388::playWAV(uint8_t *data, size_t len,uint16_t volume, uint16_t balance
     Pointer to the WAV file data.
 */
 
-uint8_t *ES8388::recordWAV(size_t rec_seconds, size_t *out_size) {
+uint8_t *ES8388::recordWAV(size_t rec_seconds, size_t *out_size, uint16_t constantsMicGain) {
   uint8_t *data;
   size_t size;
 
   _audio_mode = ES_MODULE_ADC;
   reset();
   log_v("Recording WAV file...");
+  //mic声音太小
+  setMicGain(constantsMicGain);
   start();
   data = _i2s->recordWAV(rec_seconds, &size);
   stop();
