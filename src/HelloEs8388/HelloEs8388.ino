@@ -48,8 +48,9 @@ extern const unsigned char _ac2591[180044UL + 1];
 
 File myWavFileTemp;
 const size_t myWavFileBufferSize = 128*1024;  // 每次从SD卡读取的字节数（可以调整）
-uint8_t myWavFileAudioBuffer[myWavFileBufferSize];
-
+uint8_t myWavFileAudioBuffer1[myWavFileBufferSize];
+uint8_t myWavFileAudioBuffer2[myWavFileBufferSize];
+bool useBuffer1 = true; // 当前使用的缓冲区标志
 uint8_t gptBuffer[1024];
 
 void setup() {
@@ -153,7 +154,7 @@ void loop() {
 void palyWavDemo(void)
 {
   // Create a file on the SD card
-  myWavFileTemp = SD.open("/MUSIC/temp.WAV");
+  myWavFileTemp = SD.open("/MUSIC/audio_sample_test.WAV");
   // myWavFileTemp = SD.open("/MUSIC/风起天阑.WAV",FILE_READ);
   if (!myWavFileTemp) {
     Serial.println("Failed to open file!");
@@ -166,11 +167,13 @@ void palyWavDemo(void)
   Serial.print(wavSizeTemp/1024);
   Serial.println(" KB");
 
-  myWavFileTemp.seek(44);
+  // myWavFileTemp.seek(44);
 
   while (myWavFileTemp.available()) {
+            // 选择缓冲区
+      uint8_t* currentBuffer = useBuffer1 ? buffer1 : buffer2;
       // 每次读取一块数据到缓冲区
-      size_t bytesRealSize = myWavFileTemp.read(myWavFileAudioBuffer, myWavFileBufferSize);
+      size_t bytesRealSize = myWavFileTemp.read(currentBuffer, myWavFileBufferSize);
       // 打印文件大小
       Serial.print("文件 bytesRealSize 大小为: ");
       Serial.print(bytesRealSize/1024);
@@ -178,7 +181,10 @@ void palyWavDemo(void)
       // 调用你现有的播放方法来播放缓冲区的数据
       // 示例：playAudioBuffer(audioBuffer, bytesRead);
       // 你需要将这部分替换为实际的播放代码
-      es8388.playWAV(myWavFileAudioBuffer, bytesRealSize,constantsVolume,constantsBalance);
+      es8388.playWAV(currentBuffer, bytesRealSize,constantsVolume,constantsBalance);
+      // 切换缓冲区
+      useBuffer1 = !useBuffer1;
+      delay(23);
 
       // 可以根据播放设备的要求加上延时或者检查播放是否完成
   }
