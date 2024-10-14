@@ -171,7 +171,7 @@ void palyWavDemo(void)
 
   while (myWavFileTemp.available()) {
             // 选择缓冲区
-      uint8_t* currentBuffer = useBuffer1 ? buffer1 : buffer2;
+      uint8_t* currentBuffer = useBuffer1 ? myWavFileAudioBuffer1 : myWavFileAudioBuffer2;
       // 每次读取一块数据到缓冲区
       size_t bytesRealSize = myWavFileTemp.read(currentBuffer, myWavFileBufferSize);
       // 打印文件大小
