@@ -210,11 +210,18 @@ void playAudioBuffer(uint8_t *buffer, size_t bytesRealSize) {
 
 }
 void chatGptTestPlayWavFile() {
-    myWavFileTemp = SD.open("/MUSIC/audio_sample_test.WAV");
+    myWavFileTemp = SD.open("/MUSIC/周笔畅-最美的期待.WAV");
     if (!myWavFileTemp) {
         Serial.println("文件打开失败");
         return;
     }
+    es8388.playReset();
+    es8388.playStart();
+    myWavFileTemp.seek(24);
+    // 读取采样率（4字节，little-endian）
+    unsigned long sampleRate = 0;
+    myWavFileTemp.read((uint8_t*)&sampleRate, sizeof(sampleRate));
+    es8388.setSampleRate(sampleRate);
     es8388.playStart();
     uint8_t index = 0;
     myWavFileTemp.seek(44);
@@ -223,18 +230,18 @@ void chatGptTestPlayWavFile() {
         size_t bytes_written = 0;
         // if(bytesRead<sizeof(gptBuffer))
         // {
-        Serial.print("index为: ");
-        Serial.println(index);
-          // 打印文件大小
-        Serial.print("文件 bytesRead 大小为: ");
-        Serial.print(bytesRead/1024);
-        Serial.println(" KB");
+        // Serial.print("index为: ");
+        // Serial.println(index);
+        //   // 打印文件大小
+        // Serial.print("文件 bytesRead 大小为: ");
+        // Serial.print(bytesRead/1024);
+        // Serial.println(" KB");
         es8388.playWavDirectly(gptBuffer, bytesRead,constantsVolume,constantsBalance);
         if(index >0)
         {
           // es8388.playWavDirectly(gptBuffer, bytesRead,constantsVolume,constantsBalance);
         }
-        index++;
+        // index++;
         // }
     }
     es8388.playStop();
