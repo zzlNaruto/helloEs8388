@@ -658,13 +658,13 @@ void ES8388::playWAV(uint8_t *data, size_t len,uint16_t volume, uint16_t balance
 void ES8388::playReset() {
   reset();
 }
-void ES8388::playWavDirectly(uint8_t *data, size_t len,uint16_t volume, uint16_t balance) {
-  _audio_mode = ES_MODULE_DAC;
-  setvolume(ES_MODULE_DAC, volume, balance);
+void ES8388::playWavDirectly(uint8_t *data, size_t len) {
   _i2s->write(data, len);
 }
-void ES8388::playStart()
+void ES8388::playStart(uint16_t volume, uint16_t balance)
 {
+    _audio_mode = ES_MODULE_DAC;
+    setvolume(ES_MODULE_DAC, volume, balance);
     start();
 }
 void ES8388::playStop()

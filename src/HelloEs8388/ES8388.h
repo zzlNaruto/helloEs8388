@@ -1066,8 +1066,8 @@ public:
   bool begin(I2SClass &i2s, TwoWire &i2c = Wire, uint8_t addr = 0x10);
   void end();
   void playWAV(uint8_t *data, size_t len,uint16_t volume, uint16_t balance);
-  void playWavDirectly(uint8_t *data, size_t len,uint16_t volume, uint16_t balance);
-  void playStart();
+  void playWavDirectly(uint8_t *data, size_t len);
+  void playStart(uint16_t volume, uint16_t balance);
   void playStop();
   void playReset();
   uint8_t *recordWAV(size_t rec_seconds, size_t *out_size,uint16_t constantsMicGain);

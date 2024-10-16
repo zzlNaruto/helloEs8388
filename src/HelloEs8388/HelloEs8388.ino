@@ -47,11 +47,13 @@ uint8_t constantsMicGain = 120;
 extern const unsigned char _ac2591[180044UL + 1];
 
 File myWavFileTemp;
-const size_t myWavFileBufferSize = 64*1024;  // 每次从SD卡读取的字节数（可以调整）
+const size_t myWavFileBufferSize = 8*1024;  // 每次从SD卡读取的字节数（可以调整）
 uint8_t myWavFileAudioBuffer1[myWavFileBufferSize];
 uint8_t myWavFileAudioBuffer2[myWavFileBufferSize];
 bool useBuffer1 = true; // 当前使用的缓冲区标志
-uint8_t gptBuffer[myWavFileBufferSize];
+uint8_t gptBuffer[8*1024];
+const char *wavFilePath0 = "/MUSIC/周笔畅-最美的期待.WAV";
+const char *wavFilePath3 = "/MUSIC/风起天阑.WAV";
 
 void setup() {
   // Initialize the serial port
@@ -155,7 +157,7 @@ void loop() {
 void palyWavDemo(void)
 {
   // Create a file on the SD card
-  myWavFileTemp = SD.open("/MUSIC/周笔畅-最美的期待.WAV");
+  myWavFileTemp = SD.open(wavFilePath0);
   // myWavFileTemp = SD.open("/MUSIC/风起天阑.WAV",FILE_READ);
   if (!myWavFileTemp) {
     Serial.println("Failed to open file!");
@@ -168,31 +170,31 @@ void palyWavDemo(void)
   Serial.print(wavSizeTemp/1024);
   Serial.println(" KB");
 
-  // myWavFileTemp.seek(44);
   es8388.playReset();
-  es8388.playStart();
+  es8388.playStart(constantsVolume,constantsBalance);
   myWavFileTemp.seek(24);
 
   // 读取采样率（4字节，little-endian）
   unsigned long sampleRate = 0;
   myWavFileTemp.read((uint8_t*)&sampleRate, sizeof(sampleRate));
   es8388.setSampleRate(sampleRate);
+  es8388.setSampleRate(sampleRate);
+  Serial.print("sampleRate大小为: ");
+  Serial.println(sampleRate);
+  myWavFileTemp.seek(44);
   while (myWavFileTemp.available()) {
             // 选择缓冲区
       uint8_t* currentBuffer = useBuffer1 ? myWavFileAudioBuffer1 : myWavFileAudioBuffer2;
       // 每次读取一块数据到缓冲区
       size_t bytesRealSize = myWavFileTemp.read(currentBuffer, myWavFileBufferSize);
       // 打印文件大小
-      Serial.print("文件 bytesRealSize 大小为: ");
-      Serial.print(bytesRealSize/1024);
-      Serial.println(" KB");
+      // Serial.print("文件 bytesRealSize 大小为: ");
+      // Serial.print(bytesRealSize/1024);
+      // Serial.println(" KB");
       // 调用你现有的播放方法来播放缓冲区的数据
-      // 示例：playAudioBuffer(audioBuffer, bytesRead);
-      // 你需要将这部分替换为实际的播放代码
-      es8388.playWavDirectly(currentBuffer, bytesRealSize,constantsVolume,constantsBalance);
+      es8388.playWavDirectly(currentBuffer, bytesRealSize);
       // 切换缓冲区
       useBuffer1 = !useBuffer1;
-      // delay(23);
       // 可以根据播放设备的要求加上延时或者检查播放是否完成
   }
   es8388.playStop();
@@ -210,39 +212,33 @@ void playAudioBuffer(uint8_t *buffer, size_t bytesRealSize) {
 
 }
 void chatGptTestPlayWavFile() {
-    myWavFileTemp = SD.open("/MUSIC/周笔畅-最美的期待.WAV");
+    myWavFileTemp = SD.open(wavFilePath3);
     if (!myWavFileTemp) {
         Serial.println("文件打开失败");
         return;
     }
+  // Write the audio data to the file
+    size_t wavSizeTemp = myWavFileTemp.size();
+    // 打印文件大小
+    Serial.print("文件 myWavFileTemp.txt 大小为: ");
+    Serial.print(wavSizeTemp/1024);
+    Serial.println(" KB");
+
     es8388.playReset();
-    es8388.playStart();
+    es8388.playStart(constantsVolume,constantsBalance);
     myWavFileTemp.seek(24);
+
     // 读取采样率（4字节，little-endian）
     unsigned long sampleRate = 0;
     myWavFileTemp.read((uint8_t*)&sampleRate, sizeof(sampleRate));
     es8388.setSampleRate(sampleRate);
-    es8388.playStart();
-    uint8_t index = 0;
+    Serial.print("sampleRate大小为: ");
+    Serial.println(sampleRate);
     myWavFileTemp.seek(44);
+
     while (myWavFileTemp.available()) {
         size_t bytesRead = myWavFileTemp.read(gptBuffer, sizeof(gptBuffer));
-        size_t bytes_written = 0;
-        // if(bytesRead<sizeof(gptBuffer))
-        // {
-        // Serial.print("index为: ");
-        // Serial.println(index);
-        //   // 打印文件大小
-        // Serial.print("文件 bytesRead 大小为: ");
-        // Serial.print(bytesRead/1024);
-        // Serial.println(" KB");
-        es8388.playWavDirectly(gptBuffer, bytesRead,constantsVolume,constantsBalance);
-        if(index >0)
-        {
-          // es8388.playWavDirectly(gptBuffer, bytesRead,constantsVolume,constantsBalance);
-        }
-        // index++;
-        // }
+        es8388.playWavDirectly(gptBuffer, bytesRead);
     }
     es8388.playStop();
     myWavFileTemp.close();
